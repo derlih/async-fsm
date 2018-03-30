@@ -6,22 +6,6 @@ import pytest
 from async_fsm.exceptions import *
 from async_fsm.state import *
 
-# @pytest.mark.asyncio
-# async def test_sync_function():
-#     enter = MagicMock()
-
-#     def fn():
-#         enter()
-
-#     s = State(fn)
-
-#     assert enter.call_count == 0
-
-#     await s.enter()
-#     enter.assert_called_once()
-
-#     await s.exit()
-
 
 @pytest.mark.asyncio
 async def test_sync_cm():
@@ -35,6 +19,27 @@ async def test_sync_cm():
         exit()
 
     s = StateContextManager(sync_state())
+    assert enter.call_count == 0
+
+    await s.enter()
+    enter.assert_called_once()
+
+    await s.exit()
+    exit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_sync_cm_as_function():
+    enter = MagicMock()
+    exit = MagicMock()
+
+    @contextmanager
+    def sync_state():
+        enter()
+        yield
+        exit()
+
+    s = StateFunction(sync_state)
     assert enter.call_count == 0
 
     await s.enter()
@@ -98,3 +103,20 @@ async def test_async_cm():
 
     await s.exit()
     exit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_sync_function():
+    enter = MagicMock()
+
+    def fn():
+        enter()
+
+    s = StateFunction(fn)
+
+    assert enter.call_count == 0
+
+    await s.enter()
+    enter.assert_called_once()
+
+    await s.exit()

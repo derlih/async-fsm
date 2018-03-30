@@ -1,3 +1,4 @@
+import contextlib
 from abc import ABC, abstractmethod
 
 
@@ -53,3 +54,19 @@ class StateAsyncContextManager(State):
 
     async def exit(self):
         await self._cm.__aexit__(None, None, None)
+
+
+class StateFunction(State):
+    def __init__(self, fn):
+        self._fn = fn
+
+    async def enter(self):
+        res = self._fn()
+
+        if isinstance(res, contextlib.AbstractContextManager):
+            self._cm = res
+            self.__class__ = StateContextManager
+            self._cm.__enter__()
+
+    async def exit(self):
+        pass
