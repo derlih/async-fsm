@@ -52,12 +52,9 @@ class AsyncCM:
 
 @pytest.mark.parametrize('obj', [
     fn,
-    cm_fn,
-    cm_fn(),
-    CM(),
-    coro,
-    coro_obj,
-    AsyncCM()
+    cm_fn, cm_fn(), CM(), CM,
+    coro, coro_obj,
+    AsyncCM(), AsyncCM,
 ])
 def test_create(factory, obj):
     assert isinstance(factory.create(obj), State)
