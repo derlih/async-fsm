@@ -38,7 +38,16 @@ async def coro():
     pass
 
 coro_obj = coro()
+# To remove asyncio warning
 asyncio.ensure_future(coro_obj)
+
+
+class AsyncCM:
+    async def __aenter__(self):
+        pass
+
+    async def __aexit__(self, exc_type, exc_value, tb):
+        pass
 
 
 @pytest.mark.parametrize('obj', [
@@ -47,7 +56,8 @@ asyncio.ensure_future(coro_obj)
     cm_fn(),
     CM(),
     coro,
-    coro_obj
+    coro_obj,
+    AsyncCM()
 ])
 def test_create(factory, obj):
     assert isinstance(factory.create(obj), State)
