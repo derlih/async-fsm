@@ -8,3 +8,7 @@ class MachineInvalidConfiguration(BaseException):
 
 class MachineWrongCreationParameters(MachineInvalidConfiguration):
     pass
+
+
+class StateInvalidArgument(BaseException):
+    pass
