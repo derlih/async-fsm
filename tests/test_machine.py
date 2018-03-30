@@ -8,19 +8,18 @@ from contextlib import contextmanager
 def state1():
     yield
 
-    
+
 @contextmanager
 def state2():
     yield
 
 
-@pytest.mark.parametrize('states,transitions',[
+@pytest.mark.parametrize('states,transitions', [
     ([], None),
     (set(), None),
-    ({ state1 }, None),
-    ({ state1 }, set()),
+    ({state1}, None),
+    ({state1}, set()),
 ])
 def test_init_wrong_params(states, transitions):
     with pytest.raises(exceptions.MachineWrongCreationParameters):
         Machine(states, transitions)
-
