@@ -36,6 +36,10 @@ class MockState(State):
     async def exit(self):
         self.ex()
 
+    @property
+    def original_state(self):
+        pass
+
 
 @pytest.mark.asyncio
 async def test_create_machine(factory):
