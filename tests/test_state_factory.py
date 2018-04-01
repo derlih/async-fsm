@@ -2,9 +2,9 @@ import asyncio
 from contextlib import contextmanager
 
 import pytest
-from async_fsm.exceptions import *
-from async_fsm.state import State
-from async_fsm.state_factory import StateFactory
+from async_fsm.exceptions import StateInvalidArgument
+from async_fsm.state import *
+from async_fsm.state_factory import StateFactory, is_async_cm, is_cm
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def fn():
 
 @contextmanager
 def cm_fn():
-    pass
+    yield
 
 
 class CM:
@@ -32,6 +32,13 @@ class CM:
 
     def __exit__(self, exc_type, exc_value, tb):
         pass
+
+
+@pytest.mark.parametrize('obj', [
+    CM(), CM
+])
+def test_is_cm(obj):
+    assert is_cm(obj)
 
 
 async def coro():
@@ -51,10 +58,28 @@ class AsyncCM:
 
 
 @pytest.mark.parametrize('obj', [
-    fn,
-    cm_fn, cm_fn(), CM(), CM,
-    coro, coro_obj,
-    AsyncCM(), AsyncCM,
+    AsyncCM(), AsyncCM
 ])
-def test_create(factory, obj):
-    assert isinstance(factory.create(obj), State)
+def test_is_async_cm(obj):
+    assert is_async_cm(obj)
+
+
+@pytest.mark.parametrize('obj,t', [
+    (fn, StateFunction),
+    (cm_fn, StateFunction),
+    (cm_fn(), StateContextManager),
+    (CM(), StateContextManager),
+    (CM, StateContextManager),
+    (coro, StateCoroutineFunction),
+    (coro_obj, StateCoroutineObject),
+    (AsyncCM(), StateAsyncContextManager),
+    (AsyncCM, StateAsyncContextManager),
+])
+@pytest.mark.asyncio
+async def test_create(factory, obj, t):
+    s = factory.create(obj)
+    assert isinstance(s, t)
+    assert s.original_state is obj
+
+    # await s.enter()
+    # assert s.original_state is obj

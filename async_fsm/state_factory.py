@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import inspect
 
 from .exceptions import *
 from .state import *
@@ -18,21 +17,17 @@ def is_cm(obj):
 
 class StateFactory:
     def create(self, obj):
-        if callable(obj):
-            return StateFunction(obj)
-        elif is_cm(obj):
-            if inspect.isclass(obj):
-                return StateContextManager(obj())
-            else:
-                return StateContextManager(obj)
+        if is_cm(obj):
+            return StateContextManager(obj)
+        elif is_async_cm(obj):
+            return StateAsyncContextManager(obj)
         elif asyncio.iscoroutinefunction(obj):
             return StateCoroutineFunction(obj)
         elif asyncio.iscoroutine(obj):
             return StateCoroutineObject(obj)
-        elif is_async_cm(obj):
-            if inspect.isclass(obj):
-                return StateAsyncContextManager(obj())
-            else:
-                return StateAsyncContextManager(obj)
+        # NOTE: callable check should be the last one because
+        # if class is passed by name, python threads its constructor as callable
+        elif callable(obj):
+            return StateFunction(obj)
 
         raise StateInvalidArgument('state is unsupported type')
