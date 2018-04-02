@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, create_autospec
 import pytest
 from async_fsm import create_machine
 from async_fsm.exceptions import *
-from async_fsm.machine import Machine, check_configuration, create_machine
+from async_fsm.machine import Machine, check_configuration
 from async_fsm.state import State
 from async_fsm.state_factory import StateFactory
 
@@ -21,56 +21,54 @@ def test_check_configuration(states, transitions):
 
 
 @pytest.fixture
-def factory():
-    return create_autospec(StateFactory, specset=True)
+def state_to_check_enter():
+    state_enter = MagicMock()
 
+    def state():
+        state_enter()
 
-class MockState(State):
-    def __init__(self, en, ex=None):
-        self.en = en
-        self.ex = ex if ex else MagicMock()
-
-    async def enter(self):
-        self.en()
-
-    async def exit(self):
-        self.ex()
-
-    @property
-    def original_state(self):
-        pass
+    return state, state_enter
 
 
 @pytest.mark.asyncio
-async def test_create_machine(factory):
-    enter = MagicMock()
-    factory.create.side_effect = [MockState(enter)]
-    m = await create_machine(factory, enter, [], [])
-    factory.create.assert_called_once_with(enter)
-    enter.assert_called_once()
+async def test_create_machine(state_to_check_enter):
+    init_state, init_state_enter = state_to_check_enter
+    m = await create_machine(init_state, [], [])
+    init_state_enter.assert_called_once()
 
 
 @pytest.fixture
-def machine(event_loop, factory):
-    init_enter = MagicMock()
-    init_exit = MagicMock()
-    enter = MagicMock()
-    init_state = MockState(init_enter, init_exit)
-    state = MockState(enter)
+def state_to_check_exit():
+    state_exit = MagicMock()
 
-    def init_state_fn(): return None
+    @contextmanager
+    def state():
+        yield
+        state_exit()
 
-    def state_fn(): return None
-
-    factory.create.side_effect = [init_state, state]
-    m = event_loop.run_until_complete(create_machine(factory, init_state_fn, [state_fn],
-                                                     []))
-    return m, init_exit, enter
+    return state, state_exit
 
 
 @pytest.mark.asyncio
-async def test_ignore_event(machine):
-    m, init_exit, state_enter = machine
-    await m.foo()
+async def test_ignore_event(state_to_check_enter, state_to_check_exit):
+    init_state, init_exit = state_to_check_exit
+    another_state, another_state_enter = state_to_check_enter
+
+    machine = await create_machine(init_state, [another_state], [])
+    await machine.foo()
     assert init_exit.call_count == 0
-    assert state_enter.call_count == 0
+    assert another_state_enter.call_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.asyncio
+async def test_transition_on_event(state_to_check_enter, state_to_check_exit):
+    init_state, init_exit = state_to_check_exit
+    another_state, another_state_enter = state_to_check_enter
+
+    machine = await create_machine(init_state, [another_state], [
+        (init_state, another_state, 'foo')
+    ])
+    await machine.foo()
+    assert init_exit.call_count == 1
+    assert another_state_enter.call_count == 1
