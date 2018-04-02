@@ -12,8 +12,8 @@ from async_fsm.state_factory import StateFactory
 @pytest.mark.parametrize('states,transitions', [
     ([], None),
     (set(), None),
-    ({lambda: None}, None),
-    ({lambda: None}, set()),
+    (set([lambda: None]), None),
+    (set([lambda: None]), set()),
 ])
 def test_check_configuration(states, transitions):
     with pytest.raises(MachineWrongCreationParameters):

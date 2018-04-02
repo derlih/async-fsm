@@ -5,16 +5,16 @@ from abc import ABC, abstractmethod
 
 class State(ABC):
     @abstractmethod
-    async def enter(self):
+    async def enter(self):  # pragma: no cover
         pass
 
     @abstractmethod
-    async def exit(self):
+    async def exit(self):  # pragma: no cover
         pass
 
     @property
     @abstractmethod
-    def original_state(self):
+    def original_state(self):  # pragma: no cover
         pass
 
 
