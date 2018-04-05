@@ -2,6 +2,8 @@ import contextlib
 import inspect
 from abc import ABC, abstractmethod
 
+from .is_cm import is_async_cm, is_cm
+
 
 class State(ABC):
     @abstractmethod
@@ -21,12 +23,10 @@ class State(ABC):
 class StateContextManager(State):
     def __init__(self, cm):
         self._orig = cm
-        if inspect.isclass(cm):
-            self._cm = cm()
-        else:
-            self._cm = cm
+        self._cm = None
 
     async def enter(self):
+        self._cm = self._orig()
         self._cm.__enter__()
 
     async def exit(self):
@@ -52,30 +52,13 @@ class StateCoroutineFunction(State):
         return self._coro
 
 
-class StateCoroutineObject(State):
-    def __init__(self, coro_obj):
-        self._coro_obj = coro_obj
-
-    async def enter(self):
-        await self._coro_obj
-
-    async def exit(self):
-        pass
-
-    @property
-    def original_state(self):
-        return self._coro_obj
-
-
 class StateAsyncContextManager(State):
     def __init__(self, cm):
         self._orig = cm
-        if inspect.isclass(cm):
-            self._cm = cm()
-        else:
-            self._cm = cm
+        self._cm = None
 
     async def enter(self):
+        self._cm = self._orig()
         await self._cm.__aenter__()
 
     async def exit(self):
@@ -90,17 +73,25 @@ class StateFunction(State):
     def __init__(self, fn):
         self._fn = fn
         self._cm = None
+        self._acm = None
 
     async def enter(self):
         res = self._fn()
 
-        if isinstance(res, contextlib.AbstractContextManager):
+        if is_cm(res):
             self._cm = res
             self._cm.__enter__()
+        elif is_async_cm(res):
+            self._acm = res
+            await self._acm.__aenter__()
 
     async def exit(self):
         if self._cm:
             self._cm.__exit__(None, None, None)
+            self._cm = None
+        elif self._acm:
+            await self._acm.__aexit__(None, None, None)
+            self._acm = None
 
     @property
     def original_state(self):

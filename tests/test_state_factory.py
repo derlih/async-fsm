@@ -26,6 +26,10 @@ def cm_fn():
     yield
 
 
+async def coro():
+    pass
+
+
 class CM:
     def __enter__(self):
         pass
@@ -34,19 +38,8 @@ class CM:
         pass
 
 
-@pytest.mark.parametrize('obj', [
-    CM(), CM
-])
-def test_is_cm(obj):
-    assert is_cm(obj)
-
-
-async def coro():
-    pass
-
-coro_obj = coro()
-# To remove asyncio warning
-asyncio.ensure_future(coro_obj)
+def test_is_cm():
+    assert is_cm(CM)
 
 
 class AsyncCM:
@@ -57,22 +50,15 @@ class AsyncCM:
         pass
 
 
-@pytest.mark.parametrize('obj', [
-    AsyncCM(), AsyncCM
-])
-def test_is_async_cm(obj):
-    assert is_async_cm(obj)
+def test_is_async_cm():
+    assert is_async_cm(AsyncCM)
 
 
 @pytest.mark.parametrize('obj,t', [
     (fn, StateFunction),
     (cm_fn, StateFunction),
-    (cm_fn(), StateContextManager),
-    (CM(), StateContextManager),
     (CM, StateContextManager),
     (coro, StateCoroutineFunction),
-    (coro_obj, StateCoroutineObject),
-    (AsyncCM(), StateAsyncContextManager),
     (AsyncCM, StateAsyncContextManager),
 ])
 @pytest.mark.asyncio
@@ -80,6 +66,4 @@ async def test_create(factory, obj, t):
     s = factory.create(obj)
     assert isinstance(s, t)
     assert s.original_state is obj
-
-    # await s.enter()
-    # assert s.original_state is obj
+    assert s.original_state is obj

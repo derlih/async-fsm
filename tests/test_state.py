@@ -18,14 +18,15 @@ async def test_sync_cm():
         yield
         exit()
 
-    s = StateContextManager(sync_state())
+    s = StateContextManager(sync_state)
     assert enter.call_count == 0
 
-    await s.enter()
-    enter.assert_called_once()
+    for x in range(1, 2):
+        await s.enter()
+        assert enter.call_count == x
 
-    await s.exit()
-    exit.assert_called_once()
+        await s.exit()
+        assert exit.call_count == x
 
 
 @pytest.mark.asyncio
@@ -42,11 +43,12 @@ async def test_sync_cm_as_function():
     s = StateFunction(sync_state)
     assert enter.call_count == 0
 
-    await s.enter()
-    enter.assert_called_once()
+    for x in range(1, 2):
+        await s.enter()
+        assert enter.call_count == x
 
-    await s.exit()
-    exit.assert_called_once()
+        await s.exit()
+        assert exit.call_count == x
 
 
 @pytest.mark.asyncio
@@ -67,42 +69,26 @@ async def test_coroutine_function():
 
 
 @pytest.mark.asyncio
-async def test_coroutine_object():
-    enter = MagicMock()
-
-    async def fn():
-        enter()
-
-    s = StateCoroutineObject(fn())
-
-    assert enter.call_count == 0
-
-    await s.enter()
-    enter.assert_called_once()
-
-    await s.exit()
-
-
-@pytest.mark.asyncio
 async def test_async_cm():
     enter = MagicMock()
     exit = MagicMock()
 
-    class A:
+    class AsyncCM:
         async def __aenter__(self):
             enter()
 
         async def __aexit__(self, exc_type, exc, tb):
             exit()
 
-    s = StateAsyncContextManager(A())
+    s = StateAsyncContextManager(AsyncCM)
     assert enter.call_count == 0
 
-    await s.enter()
-    enter.assert_called_once()
+    for x in range(1, 2):
+        await s.enter()
+        assert enter.call_count == x
 
-    await s.exit()
-    exit.assert_called_once()
+        await s.exit()
+        assert exit.call_count == x
 
 
 @pytest.mark.asyncio

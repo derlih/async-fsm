@@ -1,30 +1,21 @@
 import asyncio
 import contextlib
+import inspect
 
 from .exceptions import *
-from .state import *
-
-
-def is_async_cm(obj):
-    return asyncio.iscoroutinefunction(getattr(obj, '__aenter__', None)) \
-        and asyncio.iscoroutinefunction(getattr(obj, '__aexit__', None))
-
-
-def is_cm(obj):
-    return callable(getattr(obj, '__enter__', None)) \
-        and callable(getattr(obj, '__exit__', None))
+from .is_cm import is_async_cm, is_cm
+from .state import (StateAsyncContextManager, StateContextManager,
+                    StateCoroutineFunction, StateFunction)
 
 
 class StateFactory:
     def create(self, obj):
-        if is_cm(obj):
+        if inspect.isclass(obj) and is_cm(obj):
             return StateContextManager(obj)
-        elif is_async_cm(obj):
+        elif inspect.isclass(obj) and is_async_cm(obj):
             return StateAsyncContextManager(obj)
         elif asyncio.iscoroutinefunction(obj):
             return StateCoroutineFunction(obj)
-        elif asyncio.iscoroutine(obj):
-            return StateCoroutineObject(obj)
         # NOTE: callable check should be the last one because
         # if class is passed by name, python threads its constructor as callable
         elif callable(obj):
