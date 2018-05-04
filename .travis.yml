@@ -4,4 +4,9 @@ python:
   - '3.6'
 install:
   - pip install --upgrade --pre tox
+env:
+  matrix:
+    # coveralls is not listed in tox's envlist, but should run in travis
+    - TOXENV=coveralls
+    - TOXENV=py36
 script: tox --recreate
