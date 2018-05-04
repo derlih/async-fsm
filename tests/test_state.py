@@ -7,6 +7,20 @@ from async_fsm.exceptions import *
 from async_fsm.state import *
 
 
+async def check_state(state, enter, exit):
+    assert enter.call_count == 0
+    assert exit.call_count == 0
+
+    for x in range(1, 3):
+        await state.enter()
+        assert enter.call_count == x
+        assert exit.call_count == x - 1
+
+        await state.exit()
+        assert enter.call_count == x
+        assert exit.call_count == x
+
+
 @pytest.mark.asyncio
 async def test_sync_cm():
     enter = MagicMock()
@@ -19,14 +33,7 @@ async def test_sync_cm():
         exit()
 
     s = StateContextManager(sync_state)
-    assert enter.call_count == 0
-
-    for x in range(1, 2):
-        await s.enter()
-        assert enter.call_count == x
-
-        await s.exit()
-        assert exit.call_count == x
+    await check_state(s, enter, exit)
 
 
 @pytest.mark.asyncio
@@ -41,14 +48,7 @@ async def test_sync_cm_as_function():
         exit()
 
     s = StateFunction(sync_state)
-    assert enter.call_count == 0
-
-    for x in range(1, 2):
-        await s.enter()
-        assert enter.call_count == x
-
-        await s.exit()
-        assert exit.call_count == x
+    await check_state(s, enter, exit)
 
 
 @pytest.mark.asyncio
@@ -81,14 +81,7 @@ async def test_async_cm():
             exit()
 
     s = StateAsyncContextManager(AsyncCM)
-    assert enter.call_count == 0
-
-    for x in range(1, 2):
-        await s.enter()
-        assert enter.call_count == x
-
-        await s.exit()
-        assert exit.call_count == x
+    await check_state(s, enter, exit)
 
 
 @pytest.mark.asyncio
@@ -106,3 +99,29 @@ async def test_sync_function():
     enter.assert_called_once()
 
     await s.exit()
+
+
+@pytest.mark.asyncio
+async def test_sync_cm_function():
+    enter = MagicMock()
+    exit = MagicMock()
+    cm = pytest.helpers.CM(enter, exit)
+
+    def fn():
+        return cm
+
+    s = StateFunction(fn)
+    await check_state(s, enter, exit)
+
+
+@pytest.mark.asyncio
+async def test_async_cm_function():
+    enter = MagicMock()
+    exit = MagicMock()
+    cm = pytest.helpers.AsyncCM(enter, exit)
+
+    def fn():
+        return cm
+
+    s = StateFunction(fn)
+    await check_state(s, enter, exit)

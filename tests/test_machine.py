@@ -61,7 +61,6 @@ async def test_ignore_event(state_to_check_enter, state_to_check_exit):
 
 
 @pytest.mark.asyncio
-@pytest.mark.asyncio
 async def test_transition_on_event(state_to_check_enter, state_to_check_exit):
     init_state, init_exit = state_to_check_exit
     another_state, another_state_enter = state_to_check_enter

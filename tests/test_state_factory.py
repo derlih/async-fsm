@@ -38,20 +38,12 @@ class CM:
         pass
 
 
-def test_is_cm():
-    assert is_cm(CM)
-
-
 class AsyncCM:
     async def __aenter__(self):
         pass
 
     async def __aexit__(self, exc_type, exc_value, tb):
         pass
-
-
-def test_is_async_cm():
-    assert is_async_cm(AsyncCM)
 
 
 @pytest.mark.parametrize('obj,t', [

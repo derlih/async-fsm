@@ -29,25 +29,19 @@ def check_configuration(states, transitions):
 
 class Machine:
     def __init__(self, state_factory, init_state, other_states, transitions):
-        self._init_state = self._current_state = state_factory.create(
-            init_state)
         self._states = [state_factory.create(s) for s in other_states]
+        init_state = self._current_state = state_factory.create(
+            init_state)
+        self._states.insert(0, init_state)
         self._transitions = [self.create_transition(t) for t in transitions]
 
     def create_transition(self, transition):
-        if transition[0] is self._init_state.original_state:
-            from_state = self._init_state
-        else:
-            from_state = next(
-                (s for s in self._states
-                 if s.original_state is transition[0]))
-
-        if transition[1] is self._init_state:
-            to_state = self._init_state
-        else:
-            to_state = next(
-                (s for s in self._states
-                 if s.original_state is transition[1]))
+        from_state = next(
+            (s for s in self._states
+             if s.original_state is transition[0]))
+        to_state = next(
+            (s for s in self._states
+             if s.original_state is transition[1]))
 
         return Transition(from_state, to_state, transition[2])
 
